@@ -22,7 +22,7 @@ A Firefox browser extension that integrates AI into the [Overleaf](https://www.o
 1. Open Firefox and navigate to `about:debugging`
 2. Click **"This Firefox"** in the left sidebar
 3. Click **"Load Temporary Add-on…"**
-4. Navigate to the `overleaf-claude-extension/` folder and select **`manifest.json`**
+4. Navigate to the `overleaf-ai-extension/` folder and select **`manifest.json`**
 5. The extension is now loaded (it will be removed when Firefox restarts)
 
 ### Permanent installation (unsigned)
@@ -35,13 +35,13 @@ Firefox requires extensions to be signed by Mozilla for permanent installation, 
 
 ## Setup
 
-1. Click the **✦** toolbar icon (top-right of Firefox)
+1. Click the **✦** toolbar icon (bottom-left of the sidebar)
 2. Select a **Provider**:
    - **Anthropic** — get a key at [console.anthropic.com](https://console.anthropic.com)
    - **Google Gemini** — get a key at [aistudio.google.com](https://aistudio.google.com)
    - **OpenRouter** — get a key at [openrouter.ai](https://openrouter.ai) (access to 100+ models)
 3. Paste your API key for the selected provider
-4. Choose a **Model** from the dropdown (or enter a custom model ID for OpenRouter)
+4. Enter a model ID for the selected provider
 5. Click **Save Settings**
 
 ---
