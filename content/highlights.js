@@ -405,7 +405,7 @@
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   function getTypeClass(type) {
-    const map = { typo: "ocla-hl-typo", grammar: "ocla-hl-grammar", style: "ocla-hl-style" };
+    const map = { typo: "ocla-hl-typo", grammar: "ocla-hl-grammar", style: "ocla-hl-style", factual: "ocla-hl-factual" };
     return map[type] || "ocla-hl-grammar";
   }
 

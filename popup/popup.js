@@ -6,6 +6,15 @@
 (function () {
   "use strict";
 
+  const PRESETS = [
+    { color: "#468847", label: "Overleaf Green" },
+    { color: "#5b8fc7", label: "Pastel Blue" },
+    { color: "#7c3aed", label: "Purple" },
+    { color: "#e06c75", label: "Pastel Red" },
+  ];
+
+  const DEFAULT_COLOR = "#7c3aed";
+
   const PROVIDERS = {
     anthropic: {
       name: "Anthropic",
@@ -32,6 +41,9 @@
 
   // ─── DOM refs ──────────────────────────────────────────────────────────────
 
+  const swatchRow        = document.getElementById("swatch-row");
+  const customColorText  = document.getElementById("custom-color-text");
+  const customColorPicker= document.getElementById("custom-color-picker");
   const providerSelect = document.getElementById("provider-select");
   const apiKeyInput    = document.getElementById("api-key");
   const apiKeyLabel    = document.getElementById("api-key-label");
@@ -43,6 +55,45 @@
   const statusMsg      = document.getElementById("status-msg");
 
   let keyVisible = false;
+  let selectedColor = DEFAULT_COLOR;
+
+  // ─── Color scheme ──────────────────────────────────────────────────────────
+
+  function renderSwatches(activeColor) {
+    swatchRow.textContent = "";
+    PRESETS.forEach(({ color, label }) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "swatch-btn" + (color === activeColor ? " swatch-selected" : "");
+      btn.title = label;
+      btn.dataset.color = color;
+      btn.style.background = color;
+      btn.addEventListener("click", () => selectColor(color));
+      swatchRow.appendChild(btn);
+    });
+  }
+
+  function selectColor(hex) {
+    selectedColor = hex;
+    customColorText.value = hex;
+    customColorPicker.value = hex;
+    document.querySelectorAll(".swatch-btn").forEach(btn => {
+      btn.classList.toggle("swatch-selected", btn.dataset.color === hex);
+    });
+    document.documentElement.style.setProperty("--accent", hex);
+  }
+
+  customColorText.addEventListener("input", () => {
+    const val = customColorText.value.trim();
+    if (/^#[0-9a-f]{6}$/i.test(val)) {
+      customColorPicker.value = val;
+      selectColor(val);
+    }
+  });
+
+  customColorPicker.addEventListener("input", () => {
+    selectColor(customColorPicker.value);
+  });
 
   // ─── Update UI for selected provider ──────────────────────────────────────
 
@@ -59,7 +110,7 @@
 
   // ─── Load saved settings ───────────────────────────────────────────────────
 
-  browser.storage.local.get(["provider", "apiKeys", "model"], ({ provider, apiKeys, model }) => {
+  browser.storage.local.get(["provider", "apiKeys", "model", "accentColor"], ({ provider, apiKeys, model, accentColor }) => {
     const savedProvider = provider || "anthropic";
     providerSelect.value = savedProvider;
     applyProvider(savedProvider, model);
@@ -67,6 +118,10 @@
     if (apiKeys && apiKeys[savedProvider]) {
       apiKeyInput.value = apiKeys[savedProvider];
     }
+
+    const color = accentColor || DEFAULT_COLOR;
+    renderSwatches(color);
+    selectColor(color);
   });
 
   // ─── Provider change ───────────────────────────────────────────────────────
@@ -111,7 +166,7 @@
       const apiKeys = existing || {};
       apiKeys[provider] = apiKey;
 
-      await browser.storage.local.set({ provider, apiKeys, model });
+      await browser.storage.local.set({ provider, apiKeys, model, accentColor: selectedColor });
       showStatus("Settings saved!", "success");
     } catch (err) {
       showStatus(`Could not save: ${err.message}`, "error");
@@ -123,6 +178,30 @@
 
   apiKeyInput.addEventListener("keydown", e => { if (e.key === "Enter") saveBtn.click(); });
   modelInput.addEventListener("keydown",  e => { if (e.key === "Enter") saveBtn.click(); });
+
+  // ─── Auto-save on blur ─────────────────────────────────────────────────────
+  // Saves the API key (or model) immediately when the field loses focus so that
+  // closing the popup to copy a model ID doesn't discard a freshly entered key.
+
+  apiKeyInput.addEventListener("blur", async () => {
+    const provider = providerSelect.value;
+    const apiKey   = apiKeyInput.value.trim();
+    if (!apiKey) return;
+    try {
+      const { apiKeys: existing } = await browser.storage.local.get("apiKeys");
+      const apiKeys = existing || {};
+      apiKeys[provider] = apiKey;
+      await browser.storage.local.set({ provider, apiKeys });
+    } catch (_) {}
+  });
+
+  modelInput.addEventListener("blur", async () => {
+    const provider = providerSelect.value;
+    const model    = modelInput.value.trim() || PROVIDERS[provider].defaultModel;
+    try {
+      await browser.storage.local.set({ model });
+    } catch (_) {}
+  });
 
   // ─── Status helper ─────────────────────────────────────────────────────────
 

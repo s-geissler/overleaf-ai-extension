@@ -44,7 +44,42 @@ Return format (JSON array):
   }
 ]
 
-If there are no suggestions, return an empty array: []`
+If there are no suggestions, return an empty array: []`,
+
+  factchecking: `You are an expert fact-checker for academic LaTeX documents.
+Your task is to identify factual inaccuracies, incorrect attributions, wrong dates, or demonstrably false statements.
+
+IMPORTANT:
+- Focus only on clear factual errors: wrong names, incorrect dates, false claims, misattributed quotes.
+- Do NOT flag matters of opinion, unverifiable claims, or stylistic issues.
+- Ignore LaTeX commands and markup — only assess the natural language content.
+- Return ONLY a valid JSON array. No markdown, no explanation outside the JSON.
+
+Return format (JSON array):
+[
+  {
+    "original": "exact text as it appears",
+    "suggestion": "corrected text",
+    "explanation": "brief reason why this is factually incorrect",
+    "type": "factual"
+  }
+]
+
+If there are no factual issues, return an empty array: []`,
+
+  compacting: `You are an expert academic editor specializing in LaTeX documents.
+Your task is to shorten the provided text while preserving its full meaning, all arguments, and the author's writing style.
+
+IMPORTANT:
+- You MAY restructure sentences and paragraphs to improve conciseness.
+- You MUST NOT remove any content, facts, or arguments — only condense the expression.
+- You MUST keep all LaTeX commands (\\begin, \\end, \\textbf, \\cite, \\ref, \\label, etc.) completely unchanged and in their correct positions relative to the surrounding text.
+- Prioritise readability over maximum shortness.
+- Match the author's existing register, tone, and writing style.
+- Return ONLY a JSON object with two keys. No markdown, no explanation outside the JSON.
+
+Return format:
+{"compacted": "the full compacted text, ready to paste", "explanation": "brief summary of what was changed or restructured"}`
 };
 
 // ─── Provider Definitions ──────────────────────────────────────────────────
@@ -108,16 +143,16 @@ async function handleAPICall({ text, mode, provider, apiKey, model }) {
   const systemPrompt = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.proofreading;
 
   switch (provider) {
-    case "anthropic":   return callAnthropic(apiKey, model, systemPrompt, text);
-    case "gemini":      return callGemini(apiKey, model, systemPrompt, text);
-    case "openrouter":  return callOpenRouter(apiKey, model, systemPrompt, text);
+    case "anthropic":   return callAnthropic(apiKey, model, systemPrompt, text, mode);
+    case "gemini":      return callGemini(apiKey, model, systemPrompt, text, mode);
+    case "openrouter":  return callOpenRouter(apiKey, model, systemPrompt, text, mode);
     default: throw new Error(`Unknown provider: ${provider}`);
   }
 }
 
 // ─── Anthropic ─────────────────────────────────────────────────────────────
 
-async function callAnthropic(apiKey, model, systemPrompt, text) {
+async function callAnthropic(apiKey, model, systemPrompt, text, mode) {
   const response = await fetchJSON("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -133,9 +168,9 @@ async function callAnthropic(apiKey, model, systemPrompt, text) {
     })
   });
 
-  const raw = response.content?.[0]?.text || "[]";
+  const raw = response.content?.[0]?.text || "";
   return {
-    suggestions: parseJSON(raw),
+    ...parseResult(raw, mode),
     usage: {
       inputTokens:  response.usage?.input_tokens  || 0,
       outputTokens: response.usage?.output_tokens || 0
@@ -145,7 +180,7 @@ async function callAnthropic(apiKey, model, systemPrompt, text) {
 
 // ─── Google Gemini ─────────────────────────────────────────────────────────
 
-async function callGemini(apiKey, model, systemPrompt, text) {
+async function callGemini(apiKey, model, systemPrompt, text, mode) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const response = await fetchJSON(url, {
@@ -158,10 +193,10 @@ async function callGemini(apiKey, model, systemPrompt, text) {
     })
   });
 
-  const raw = response.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
+  const raw = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
   const usage = response.usageMetadata || {};
   return {
-    suggestions: parseJSON(raw),
+    ...parseResult(raw, mode),
     usage: {
       inputTokens:  usage.promptTokenCount    || 0,
       outputTokens: usage.candidatesTokenCount || 0
@@ -171,7 +206,7 @@ async function callGemini(apiKey, model, systemPrompt, text) {
 
 // ─── OpenRouter ────────────────────────────────────────────────────────────
 
-async function callOpenRouter(apiKey, model, systemPrompt, text) {
+async function callOpenRouter(apiKey, model, systemPrompt, text, mode) {
   const response = await fetchJSON("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -190,10 +225,10 @@ async function callOpenRouter(apiKey, model, systemPrompt, text) {
     })
   });
 
-  const raw = response.choices?.[0]?.message?.content || "[]";
+  const raw = response.choices?.[0]?.message?.content || "";
   const usage = response.usage || {};
   return {
-    suggestions: parseJSON(raw),
+    ...parseResult(raw, mode),
     usage: {
       inputTokens:  usage.prompt_tokens     || 0,
       outputTokens: usage.completion_tokens || 0
@@ -226,12 +261,20 @@ async function fetchJSON(url, options) {
   return response.json();
 }
 
-function parseJSON(raw) {
+function parseResult(raw, mode) {
+  const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
+  if (mode === "compacting") {
+    try {
+      const obj = JSON.parse(cleaned);
+      return { compacted: obj.compacted || cleaned, explanation: obj.explanation || "" };
+    } catch (_) {
+      return { compacted: cleaned, explanation: "" };
+    }
+  }
   try {
-    const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/,"").trim();
     const parsed = JSON.parse(cleaned);
-    return Array.isArray(parsed) ? parsed : [];
+    return { suggestions: Array.isArray(parsed) ? parsed : [] };
   } catch (_) {
-    return [];
+    return { suggestions: [] };
   }
 }

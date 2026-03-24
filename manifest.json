@@ -8,7 +8,7 @@
     "activeTab"
   ],
   "host_permissions": [
-    "https://www.overleaf.com/*",
+    "https://*.overleaf.com/*",
     "https://api.anthropic.com/*",
     "https://generativelanguage.googleapis.com/*",
     "https://openrouter.ai/*"
@@ -18,7 +18,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.overleaf.com/project/*"],
+      "matches": ["https://*.overleaf.com/project/*"],
       "js": [
         "content/content.js",
         "content/sidebar.js",

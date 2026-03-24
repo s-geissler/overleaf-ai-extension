@@ -13,12 +13,13 @@
 
   // ─── State ────────────────────────────────────────────────────────────────
   const state = {
-    mode: "proofreading",   // "proofreading" | "style"
+    mode: "proofreading",   // "proofreading" | "style" | "factchecking" | "compacting"
     suggestions: [],
     isLoading: false,
     lastUsage: null,
     totalInputTokens: 0,
-    totalOutputTokens: 0
+    totalOutputTokens: 0,
+    compactRange: null      // saved selection Range for compacting mode
   };
 
   // ─── CodeMirror Text Extraction ──────────────────────────────────────────
@@ -81,13 +82,18 @@
         throw new Error(response.error);
       }
 
-      state.suggestions = response.data.suggestions;
       state.lastUsage = response.data.usage;
       state.totalInputTokens += response.data.usage.inputTokens;
       state.totalOutputTokens += response.data.usage.outputTokens;
 
-      window.__oclaSidebar.renderSuggestions(state.suggestions, state.lastUsage, state.totalInputTokens, state.totalOutputTokens);
-      window.__oclaHighlights.applyHighlights(state.suggestions);
+      if (response.data.compacted !== undefined) {
+        // Compacting mode: single replacement result, no highlights
+        window.__oclaSidebar.renderCompactResult(response.data.compacted, response.data.explanation, state.lastUsage, state.totalInputTokens, state.totalOutputTokens);
+      } else {
+        state.suggestions = response.data.suggestions;
+        window.__oclaSidebar.renderSuggestions(state.suggestions, state.lastUsage, state.totalInputTokens, state.totalOutputTokens);
+        window.__oclaHighlights.applyHighlights(state.suggestions);
+      }
 
     } catch (err) {
       window.__oclaSidebar.showError(err.message);
@@ -117,6 +123,11 @@
         window.__oclaSidebar.showError("No text selected. Select some text in the editor first.");
         return;
       }
+      // Capture the selection range now — it will be lost once the panel focuses or API returns.
+      if (state.mode === "compacting") {
+        const sel = window.getSelection();
+        state.compactRange = (sel && !sel.isCollapsed) ? sel.getRangeAt(0).cloneRange() : null;
+      }
       runAnalysis(text);
     },
 
@@ -126,7 +137,24 @@
 
     onClearHighlights() {
       state.suggestions = [];
+      state.compactRange = null;
       window.__oclaHighlights.clearHighlights();
+    },
+
+    onApplyCompact(compactedText) {
+      if (!state.compactRange) return;
+      const cmContent = document.querySelector(".cm-content");
+      if (cmContent) {
+        try {
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(state.compactRange);
+          cmContent.focus();
+          document.execCommand("insertText", false, compactedText);
+        } catch (_) {}
+      }
+      state.compactRange = null;
+      window.__oclaSidebar.clearResults();
     },
 
     onAcceptSuggestion(index) {
@@ -141,6 +169,37 @@
       window.__oclaSidebar.removeSuggestion(index);
     }
   };
+
+  // ─── Accent color theming ─────────────────────────────────────────────────
+
+  function hexToRgb(hex) {
+    const m = /^#([0-9a-f]{6})$/i.exec(hex);
+    if (!m) return null;
+    return [parseInt(m[1].slice(0, 2), 16), parseInt(m[1].slice(2, 4), 16), parseInt(m[1].slice(4, 6), 16)];
+  }
+
+  function applyAccentColor(hex) {
+    if (!hex) return;
+    const rgb = hexToRgb(hex);
+    if (!rgb) return;
+    const [r, g, b] = rgb;
+    // Inline styles on :root always win over any stylesheet declaration,
+    // including the extension's own content.css injection.
+    const root = document.documentElement;
+    root.style.setProperty("--ocla-accent", hex);
+    root.style.setProperty("--ocla-accent-light", `rgba(${r},${g},${b},0.18)`);
+    root.style.setProperty("--ocla-accent-dim", `rgba(${r},${g},${b},0.4)`);
+  }
+
+  browser.storage.local.get("accentColor", ({ accentColor }) => {
+    if (accentColor) applyAccentColor(accentColor);
+  });
+
+  browser.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes.accentColor) {
+      applyAccentColor(changes.accentColor.newValue);
+    }
+  });
 
   // ─── Init ─────────────────────────────────────────────────────────────────
 

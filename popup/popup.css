@@ -214,6 +214,56 @@ main {
   font-weight: 500;
 }
 
+/* ── Color swatches ────────────────────────────────────────── */
+.swatch-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.swatch-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+  flex-shrink: 0;
+}
+.swatch-btn:hover {
+  transform: scale(1.12);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.swatch-btn.swatch-selected {
+  border-color: var(--text);
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--text);
+}
+
+.color-custom-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.color-hex-input {
+  font-family: monospace;
+  width: 100px;
+  flex: none;
+}
+
+.color-picker-native {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1px;
+  background: var(--bg);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 /* ── Footer ─────────────────────────────────────────────────── */
 .footer {
   padding: 8px 16px;

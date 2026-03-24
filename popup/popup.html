@@ -60,6 +60,24 @@
         <p class="hint" id="model-hint"></p>
       </section>
 
+      <!-- Accent color -->
+      <section class="section">
+        <label class="label">Accent Color</label>
+        <div class="swatch-row" id="swatch-row"></div>
+        <div class="color-custom-row">
+          <input
+            type="text"
+            id="custom-color-text"
+            class="input color-hex-input"
+            placeholder="#7c3aed"
+            maxlength="7"
+            spellcheck="false"
+            autocomplete="off"
+          >
+          <input type="color" id="custom-color-picker" class="color-picker-native" value="#7c3aed">
+        </div>
+      </section>
+
       <div id="status-msg" class="status-msg" hidden></div>
 
       <button id="save-btn" class="btn-primary">Save Settings</button>

@@ -210,7 +210,13 @@
 
     checkDocBtn.addEventListener("click", () => window.__oclaContent?.onCheckDocument());
     checkSelBtn.addEventListener("click", () => window.__oclaContent?.onCheckSelection());
-    modeSelect.addEventListener("change", () => window.__oclaContent?.onModeChange(modeSelect.value));
+    modeSelect.addEventListener("change", () => {
+      const mode = modeSelect.value;
+      window.__oclaContent?.onModeChange(mode);
+      const compacting = mode === "compacting";
+      checkDocBtn.disabled = compacting;
+      checkDocBtn.title = compacting ? "Compacting is only available for a selection" : "";
+    });
     panelEl.querySelector("#ocla-clear").addEventListener("click", () => {
       window.__oclaContent?.onClearHighlights();
       resetResults();
@@ -233,6 +239,8 @@
         <select id="ocla-mode" class="ocla-select">
           <option value="proofreading">Proofreading</option>
           <option value="style">Style</option>
+          <option value="factchecking">Fact Checking</option>
+          <option value="compacting">Compacting</option>
         </select>
         <button id="ocla-check-doc" class="ocla-btn ocla-btn-primary">Check Document</button>
         <button id="ocla-check-sel" class="ocla-btn ocla-btn-secondary">Check Selection</button>
@@ -334,8 +342,71 @@
     }
   }
 
+  function renderCompactResult(compactedText, explanation, lastUsage, totalIn, totalOut) {
+    hideStatus();
+    openPanel();
+    resultsEl.textContent = "";
+
+    const card = document.createElement("div");
+    card.className = "ocla-card ocla-compact-card";
+
+    const top = document.createElement("div");
+    top.className = "ocla-card-top";
+    const badge = document.createElement("span");
+    badge.className = "ocla-type-badge ocla-type-compact";
+    badge.textContent = "COMPACTED";
+    top.appendChild(badge);
+
+    const preview = document.createElement("div");
+    preview.className = "ocla-compact-preview";
+    preview.textContent = compactedText;
+
+    const expl = document.createElement("div");
+    expl.className = "ocla-expl";
+    expl.textContent = explanation || "";
+
+    const actions = document.createElement("div");
+    actions.className = "ocla-card-actions ocla-compact-actions";
+    const applyBtn = document.createElement("button");
+    applyBtn.className = "ocla-action-btn ocla-accept-btn";
+    applyBtn.title = "Replace selection with compacted text";
+    applyBtn.textContent = "✓ Apply";
+    const discardBtn = document.createElement("button");
+    discardBtn.className = "ocla-action-btn ocla-reject-btn";
+    discardBtn.title = "Discard compacted result";
+    discardBtn.textContent = "✗ Discard";
+    actions.append(applyBtn, discardBtn);
+
+    card.append(top, preview, expl, actions);
+
+    applyBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      window.__oclaContent?.onApplyCompact(compactedText);
+    });
+    discardBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      window.__oclaContent?.onClearHighlights();
+      resetResults();
+    });
+
+    resultsEl.appendChild(card);
+
+    if (lastUsage) {
+      usageEl.hidden = false;
+      usageEl.textContent = "";
+      const last = document.createElement("span");
+      last.textContent = `Last: ${lastUsage.inputTokens.toLocaleString()} in / ${lastUsage.outputTokens.toLocaleString()} out`;
+      const sep = document.createElement("span");
+      sep.className = "ocla-usage-sep";
+      sep.textContent = "·";
+      const session = document.createElement("span");
+      session.textContent = `Session: ${totalIn.toLocaleString()} / ${totalOut.toLocaleString()}`;
+      usageEl.append(last, sep, session);
+    }
+  }
+
   function buildCard(suggestion, index) {
-    const TYPE_CLASS = { typo: "ocla-type-typo", grammar: "ocla-type-grammar", style: "ocla-type-style" };
+    const TYPE_CLASS = { typo: "ocla-type-typo", grammar: "ocla-type-grammar", style: "ocla-type-style", factual: "ocla-type-factual" };
     const typeClass  = TYPE_CLASS[suggestion.type] || "ocla-type-grammar";
 
     const card = document.createElement("div");
@@ -424,19 +495,26 @@
 
   // ─── Init ─────────────────────────────────────────────────────────────────
 
+  /**
+   * Public entry point — always resets module state so file-switch re-inits
+   * start clean, then delegates to tryInit() which retries up to 12 times
+   * (every 500 ms) while Overleaf's SPA finishes rendering the sidebar.
+   */
   function init() {
-    // If our panel is already live in the DOM, nothing to do.
-    const existing = document.getElementById(PANEL_ID);
-    if (existing && document.body.contains(existing)) return;
-
-    // Reset module state (handles file-switch re-init).
     panelEl = resultsEl = statusEl = usageEl = checkDocBtn = checkSelBtn = modeSelect = null;
     hostEl  = null;
     isOpen  = false;
+    tryInit(0);
+  }
+
+  function tryInit(attempt) {
+    // Panel already live — nothing to do.
+    const existing = document.getElementById(PANEL_ID);
+    if (existing && document.body.contains(existing)) return;
 
     const els = findSidebarElements();
     if (!els) {
-      console.warn("[Overleaf AI] Could not find sidebar elements — retrying.");
+      if (attempt < 12) setTimeout(() => tryInit(attempt + 1), 500);
       return;
     }
 
@@ -454,6 +532,6 @@
 
   // ─── Public API ───────────────────────────────────────────────────────────
 
-  window.__oclaSidebar = { init, setLoading, showError, renderSuggestions, removeSuggestion };
+  window.__oclaSidebar = { init, setLoading, showError, renderSuggestions, removeSuggestion, renderCompactResult, clearResults: resetResults };
 
 })();
