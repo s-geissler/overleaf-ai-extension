@@ -8,6 +8,8 @@ A Firefox browser extension that integrates AI into the [Overleaf](https://www.o
 
 - **Proofreading mode** — finds typos, spelling errors, and grammar mistakes
 - **Style mode** — additionally suggests improvements to clarity, flow, and academic writing style
+- **Fact Checking mode** — identifies factual inaccuracies, wrong dates, incorrect attributions, and demonstrably false statements
+- **Compacting mode** — shortens selected text while preserving all arguments and meaning (selection only)
 - **Check full document** or **check selected text**
 - **Inline highlights** in the editor with hover/click tooltips
 - **Sidebar panel** listing all suggestions with original → corrected text and explanations
@@ -38,8 +40,11 @@ Firefox requires extensions to be signed by Mozilla for permanent installation, 
 1. Click the **✦** toolbar icon (bottom-left of the sidebar)
 2. Select a **Provider**:
    - **Anthropic** — get a key at [console.anthropic.com](https://console.anthropic.com)
+     - Suggested models: `claude-haiku-4-5-20251001` (fast), `claude-sonnet-4-5`, `claude-opus-4-5`
    - **Google Gemini** — get a key at [aistudio.google.com](https://aistudio.google.com)
+     - Suggested models: `gemini-2.0-flash`, `gemini-2.5-flash-preview-04-17`, `gemini-2.5-pro-preview-03-25`
    - **OpenRouter** — get a key at [openrouter.ai](https://openrouter.ai) (access to 100+ models)
+     - Suggested models: `google/gemini-flash-1.5`, `meta-llama/llama-3.3-70b-instruct`, `mistralai/mistral-small-3.1-24b-instruct`, `deepseek/deepseek-chat-v3-0324`, `openai/gpt-4o-mini`
 3. Paste your API key for the selected provider
 4. Enter a model ID for the selected provider
 5. Click **Save Settings**
@@ -50,14 +55,19 @@ Firefox requires extensions to be signed by Mozilla for permanent installation, 
 
 1. Open any project on **overleaf.com** (URL must match `/project/*`)
 2. The AI sidebar appears on the right side of the editor
-3. Choose a mode: **Proofreading** or **Style**
+3. Choose a mode:
+   - **Proofreading** — spell and grammar errors
+   - **Style** — all of proofreading, plus clarity and flow suggestions
+   - **Fact Checking** — flags factual inaccuracies and wrong attributions
+   - **Compacting** — condenses a selection (only available with *Check Selection*)
 4. Click **Check Document** to analyze the full document, or select some text and click **Check Selection**
 5. Suggestions appear in the sidebar and as inline highlights in the editor:
    - 🔴 Red underline = typo
    - 🟠 Orange underline = grammar
-   - 🔵 Blue dotted = style
-6. Click a suggestion card in the sidebar (or hover/click a highlight) to see details
-7. Click **Clear highlights** to remove all overlays
+   - 🔵 Blue dotted = style / fact issue
+6. In Compacting mode, the result appears as a card — review and click **Apply** to replace the selection
+7. Click a suggestion card in the sidebar (or hover/click a highlight) to see details
+8. Click **Clear highlights** to remove all overlays
 
 ---
 
