@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overleaf AI Assistant — Settings</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <span class="logo">✦</span>
+      <div class="header-text">
+        <h1>AI Assistant</h1>
+        <p>for Overleaf</p>
+      </div>
+    </header>
+
+    <main>
+
+      <!-- Provider -->
+      <section class="section">
+        <label class="label" for="provider-select">Provider</label>
+        <select id="provider-select" class="select">
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="gemini">Google Gemini</option>
+          <option value="openrouter">OpenRouter</option>
+        </select>
+      </section>
+
+      <!-- API Key (per provider) -->
+      <section class="section">
+        <label class="label" for="api-key" id="api-key-label">API Key</label>
+        <div class="input-group">
+          <input
+            type="password"
+            id="api-key"
+            class="input"
+            placeholder="sk-ant-api…"
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <button id="toggle-visibility" class="icon-btn" title="Show/hide key">👁</button>
+        </div>
+        <p class="hint" id="api-key-hint">
+          Stored locally in your browser. Sent only to the selected provider's API.
+        </p>
+      </section>
+
+      <!-- Model -->
+      <section class="section">
+        <label class="label" for="model-input">Model</label>
+        <input
+          type="text"
+          id="model-input"
+          class="input"
+          autocomplete="off"
+          spellcheck="false"
+        >
+        <p class="hint" id="model-hint"></p>
+      </section>
+
+      <div id="status-msg" class="status-msg" hidden></div>
+
+      <button id="save-btn" class="btn-primary">Save Settings</button>
+
+      <div class="divider"></div>
+
+      <section class="info-section">
+        <h2>How to use</h2>
+        <ol>
+          <li>Open a project on <strong>overleaf.com</strong></li>
+          <li>The AI sidebar appears on the right side of the editor</li>
+          <li>Choose <em>Proofreading</em> or <em>Style</em> mode</li>
+          <li>Click <strong>Check Document</strong> or select text and click <strong>Check Selection</strong></li>
+          <li>Suggestions appear in the sidebar and as inline highlights</li>
+        </ol>
+      </section>
+    </main>
+
+    <footer class="footer">
+      v1.1.0 &nbsp;·&nbsp; Multi-provider AI
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

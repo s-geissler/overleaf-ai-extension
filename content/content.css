@@ -1,0 +1,422 @@
+/* ============================================================
+   Overleaf AI Assistant — Injected Styles
+   Panel lives in Overleaf's left sidebar (file tree / comments area).
+   ============================================================ */
+
+/* ── Variables ─────────────────────────────────────────────── */
+:root {
+  --ocla-accent:       #7c3aed;
+  --ocla-accent-light: rgba(124, 58, 237, 0.18);
+  --ocla-accent-dim:   rgba(124, 58, 237, 0.4);
+  --ocla-bg:           #1a1a1a;
+  --ocla-bg2:          #252525;
+  --ocla-bg3:          #2e2e2e;
+  --ocla-border:       rgba(255, 255, 255, 0.08);
+  --ocla-text:         #e0e0e0;
+  --ocla-text-muted:   #888;
+  --ocla-error:        #f87171;
+  --ocla-success:      #34d399;
+  --ocla-font:         -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --ocla-radius:       5px;
+}
+
+/* ── Sidebar tab button ─────────────────────────────────────── */
+/*
+ * Injected into Overleaf's left icon strip alongside the file tree,
+ * comments, etc. buttons. Styled to match their general appearance.
+ */
+#ocla-tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  padding: 8px 4px;
+  border: none;
+  background: transparent;
+  color: var(--ocla-text-muted);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  font-family: var(--ocla-font);
+  box-sizing: border-box;
+}
+#ocla-tab-btn:hover {
+  color: var(--ocla-text);
+  background: rgba(255, 255, 255, 0.06);
+}
+#ocla-tab-btn.ocla-tab-btn-active {
+  color: #a78bfa;
+  background: var(--ocla-accent-light);
+  border-left: 2px solid var(--ocla-accent);
+}
+.ocla-tab-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+.ocla-tab-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+/* ── Sidebar host container ─────────────────────────────────── */
+/*
+ * Added to the panelBody element so our absolute panel overlays it.
+ * We use !important to override any inline style that might interfere.
+ */
+.ocla-sidebar-host {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* ── AI Panel (full overlay of sidebar content area) ────────── */
+#ocla-panel {
+  position: absolute;
+  inset: 0;               /* top/right/bottom/left all 0 */
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  background: var(--ocla-bg);
+  font-family: var(--ocla-font);
+  font-size: 13px;
+  color: var(--ocla-text);
+  overflow: hidden;
+  /* Subtle fade-in */
+  animation: ocla-fadein 0.15s ease;
+}
+#ocla-panel.ocla-panel-hidden {
+  display: none;
+}
+@keyframes ocla-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Panel header ───────────────────────────────────────────── */
+.ocla-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 9px;
+  border-bottom: 1px solid var(--ocla-border);
+  flex-shrink: 0;
+  background: var(--ocla-bg2);
+}
+.ocla-panel-logo {
+  color: var(--ocla-accent);
+  font-size: 15px;
+  line-height: 1;
+}
+.ocla-panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--ocla-text);
+}
+
+/* ── Controls ───────────────────────────────────────────────── */
+.ocla-panel-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 10px 8px;
+  border-bottom: 1px solid var(--ocla-border);
+  flex-shrink: 0;
+}
+.ocla-ctrl-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--ocla-text-muted);
+}
+.ocla-select {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--ocla-border);
+  border-radius: var(--ocla-radius);
+  background: var(--ocla-bg3);
+  color: var(--ocla-text);
+  font-size: 12px;
+  font-family: var(--ocla-font);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.ocla-select:focus { border-color: var(--ocla-accent); }
+
+.ocla-btn {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--ocla-radius);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--ocla-font);
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s, opacity 0.15s;
+}
+.ocla-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.ocla-btn-primary {
+  background: var(--ocla-accent);
+  color: #fff;
+}
+.ocla-btn-primary:hover:not(:disabled) { background: #6d28d9; }
+
+.ocla-btn-secondary {
+  background: var(--ocla-accent-light);
+  color: #c4b5fd;
+  border-color: var(--ocla-accent-dim);
+}
+.ocla-btn-secondary:hover:not(:disabled) {
+  background: rgba(124, 58, 237, 0.28);
+  color: #fff;
+}
+
+.ocla-btn-ghost {
+  background: transparent;
+  color: var(--ocla-text-muted);
+  border-color: var(--ocla-border);
+}
+.ocla-btn-ghost:hover { background: var(--ocla-bg3); color: var(--ocla-text); }
+
+/* ── Status / error message ─────────────────────────────────── */
+.ocla-status-msg {
+  padding: 8px 10px;
+  font-size: 11px;
+  border-bottom: 1px solid var(--ocla-border);
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+.ocla-status-error { color: var(--ocla-error); background: rgba(248, 113, 113, 0.08); }
+
+/* ── Results (scrollable flex-1 area) ───────────────────────── */
+.ocla-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 10px;
+}
+.ocla-results::-webkit-scrollbar { width: 4px; }
+.ocla-results::-webkit-scrollbar-track { background: transparent; }
+.ocla-results::-webkit-scrollbar-thumb { background: var(--ocla-border); border-radius: 2px; }
+
+/* ── Loading ────────────────────────────────────────────────── */
+.ocla-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 4px;
+  color: var(--ocla-text-muted);
+  font-size: 12px;
+}
+.ocla-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--ocla-border);
+  border-top-color: var(--ocla-accent);
+  border-radius: 50%;
+  animation: ocla-spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes ocla-spin { to { transform: rotate(360deg); } }
+
+/* ── Empty / success state ──────────────────────────────────── */
+.ocla-empty-state {
+  color: var(--ocla-text-muted);
+  padding: 20px 4px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.ocla-empty-state.ocla-success { color: var(--ocla-success); font-weight: 500; }
+
+/* ── Suggestion count label ─────────────────────────────────── */
+.ocla-count {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--ocla-text-muted);
+  margin-bottom: 6px;
+}
+
+/* ── Suggestion cards (vertical layout) ─────────────────────── */
+.ocla-card {
+  padding: 8px 10px;
+  border-radius: var(--ocla-radius);
+  background: var(--ocla-bg2);
+  border: 1px solid var(--ocla-border);
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.ocla-card:hover {
+  border-color: var(--ocla-accent-dim);
+  background: rgba(124, 58, 237, 0.07);
+}
+.ocla-card-top { margin-bottom: 5px; }
+
+.ocla-type-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+.ocla-type-typo    { background: rgba(248, 113, 113, 0.2); color: #fca5a5; }
+.ocla-type-grammar { background: rgba(251, 191, 36, 0.15); color: #fcd34d; }
+.ocla-type-style   { background: rgba(96, 165, 250, 0.15); color: #93c5fd; }
+
+.ocla-card-diff {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px;
+  margin-bottom: 5px;
+}
+.ocla-text {
+  font-family: monospace;
+  font-size: 12px;
+  word-break: break-word;
+}
+.ocla-text-error   { color: var(--ocla-error); text-decoration: line-through; text-decoration-color: rgba(248, 113, 113, 0.5); }
+.ocla-text-success { color: var(--ocla-success); }
+.ocla-arrow { color: var(--ocla-text-muted); font-size: 11px; flex-shrink: 0; }
+
+.ocla-expl {
+  font-size: 11px;
+  color: var(--ocla-text-muted);
+  line-height: 1.4;
+}
+
+/* ── Accept / Reject actions (revealed on card hover) ───────── */
+.ocla-card-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 7px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.ocla-card:hover .ocla-card-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+.ocla-action-btn {
+  flex: 1;
+  padding: 3px 0;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--ocla-font);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.ocla-accept-btn {
+  background: rgba(52, 211, 153, 0.12);
+  color: var(--ocla-success);
+  border-color: rgba(52, 211, 153, 0.3);
+}
+.ocla-accept-btn:hover {
+  background: rgba(52, 211, 153, 0.25);
+  border-color: var(--ocla-success);
+}
+.ocla-reject-btn {
+  background: rgba(248, 113, 113, 0.1);
+  color: var(--ocla-error);
+  border-color: rgba(248, 113, 113, 0.25);
+}
+.ocla-reject-btn:hover {
+  background: rgba(248, 113, 113, 0.22);
+  border-color: var(--ocla-error);
+}
+
+/* ── Token usage footer ─────────────────────────────────────── */
+.ocla-usage {
+  padding: 7px 10px;
+  font-size: 10px;
+  color: var(--ocla-text-muted);
+  border-top: 1px solid var(--ocla-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+  flex-shrink: 0;
+  background: var(--ocla-bg2);
+}
+.ocla-usage-sep { color: var(--ocla-border); }
+
+/* ── Highlight Overlay ─────────────────────────────────────── */
+#ocla-highlight-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9980;
+}
+.ocla-highlight {
+  position: absolute;
+  pointer-events: auto;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.ocla-hl-typo    { background: rgba(248, 113, 113, 0.18); border-bottom: 2px solid rgba(248, 113, 113, 0.8); }
+.ocla-hl-grammar { background: rgba(251, 191, 36,  0.12); border-bottom: 2px solid rgba(251, 191, 36,  0.7); }
+.ocla-hl-style   { background: rgba(96,  165, 250, 0.10); border-bottom: 2px dotted rgba(96,  165, 250, 0.65); }
+
+@keyframes ocla-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.6); }
+  70%  { box-shadow: 0 0 0 7px rgba(124, 58, 237, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
+}
+.ocla-highlight-pulse { animation: ocla-pulse 0.55s ease-out 2; }
+
+/* ── Tooltip ────────────────────────────────────────────────── */
+#ocla-tooltip {
+  position: absolute;
+  display: none;
+  z-index: 9999;
+  background: #111;
+  color: #f0f0f0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--ocla-radius);
+  padding: 9px 12px;
+  max-width: 280px;
+  min-width: 160px;
+  font-family: var(--ocla-font);
+  font-size: 12px;
+  line-height: 1.5;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+#ocla-tooltip.ocla-tooltip-pinned { pointer-events: auto; }
+
+.ocla-tooltip-type {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+.ocla-tooltip-type.ocla-hl-typo    { background: rgba(248, 113, 113, 0.3); color: #fca5a5; }
+.ocla-tooltip-type.ocla-hl-grammar { background: rgba(251, 191, 36,  0.2); color: #fcd34d; }
+.ocla-tooltip-type.ocla-hl-style   { background: rgba(96,  165, 250, 0.2); color: #93c5fd; }
+
+.ocla-tooltip-row   { display: flex; gap: 6px; margin-bottom: 2px; }
+.ocla-tooltip-label { font-weight: 600; color: #666; flex-shrink: 0; }
+.ocla-tooltip-orig  { color: var(--ocla-error);   word-break: break-word; }
+.ocla-tooltip-sugg  { color: var(--ocla-success);  word-break: break-word; }
+.ocla-tooltip-expl  {
+  margin-top: 5px;
+  font-size: 11px;
+  color: #aaa;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 5px;
+}
