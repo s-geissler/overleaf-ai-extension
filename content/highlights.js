@@ -191,18 +191,37 @@
   // ─── Tooltip ──────────────────────────────────────────────────────────────
 
   function showTooltip(anchorEl, suggestion, pinned = false) {
-    tooltipEl.innerHTML = `
-      <div class="ocla-tooltip-type ${getTypeClass(suggestion.type)}">${escapeHtml((suggestion.type || "issue").toUpperCase())}</div>
-      <div class="ocla-tooltip-row">
-        <span class="ocla-tooltip-label">Original:</span>
-        <span class="ocla-tooltip-orig">${escapeHtml(suggestion.original || "")}</span>
-      </div>
-      <div class="ocla-tooltip-row">
-        <span class="ocla-tooltip-label">Suggestion:</span>
-        <span class="ocla-tooltip-sugg">${escapeHtml(suggestion.suggestion || "")}</span>
-      </div>
-      <div class="ocla-tooltip-expl">${escapeHtml(suggestion.explanation || "")}</div>
-    `;
+    tooltipEl.textContent = "";
+
+    const typeDiv = document.createElement("div");
+    typeDiv.className = `ocla-tooltip-type ${getTypeClass(suggestion.type)}`;
+    typeDiv.textContent = (suggestion.type || "issue").toUpperCase();
+
+    const origRow = document.createElement("div");
+    origRow.className = "ocla-tooltip-row";
+    const origLabel = document.createElement("span");
+    origLabel.className = "ocla-tooltip-label";
+    origLabel.textContent = "Original:";
+    const origVal = document.createElement("span");
+    origVal.className = "ocla-tooltip-orig";
+    origVal.textContent = suggestion.original || "";
+    origRow.append(origLabel, origVal);
+
+    const suggRow = document.createElement("div");
+    suggRow.className = "ocla-tooltip-row";
+    const suggLabel = document.createElement("span");
+    suggLabel.className = "ocla-tooltip-label";
+    suggLabel.textContent = "Suggestion:";
+    const suggVal = document.createElement("span");
+    suggVal.className = "ocla-tooltip-sugg";
+    suggVal.textContent = suggestion.suggestion || "";
+    suggRow.append(suggLabel, suggVal);
+
+    const explDiv = document.createElement("div");
+    explDiv.className = "ocla-tooltip-expl";
+    explDiv.textContent = suggestion.explanation || "";
+
+    tooltipEl.append(typeDiv, origRow, suggRow, explDiv);
     tooltipEl.setAttribute("aria-hidden", "false");
     tooltipEl.classList.toggle("ocla-tooltip-pinned", pinned);
 

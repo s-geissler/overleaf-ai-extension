@@ -322,11 +322,15 @@
 
     if (lastUsage) {
       usageEl.hidden = false;
-      usageEl.innerHTML = `
-        <span>Last: ${lastUsage.inputTokens.toLocaleString()} in / ${lastUsage.outputTokens.toLocaleString()} out</span>
-        <span class="ocla-usage-sep">·</span>
-        <span>Session: ${totalIn.toLocaleString()} / ${totalOut.toLocaleString()}</span>
-      `;
+      usageEl.textContent = "";
+      const last = document.createElement("span");
+      last.textContent = `Last: ${lastUsage.inputTokens.toLocaleString()} in / ${lastUsage.outputTokens.toLocaleString()} out`;
+      const sep = document.createElement("span");
+      sep.className = "ocla-usage-sep";
+      sep.textContent = "·";
+      const session = document.createElement("span");
+      session.textContent = `Session: ${totalIn.toLocaleString()} / ${totalOut.toLocaleString()}`;
+      usageEl.append(last, sep, session);
     }
   }
 
@@ -337,21 +341,43 @@
     const card = document.createElement("div");
     card.className     = "ocla-card";
     card.dataset.index = index;
-    card.innerHTML = `
-      <div class="ocla-card-top">
-        <span class="ocla-type-badge ${typeClass}">${escapeHtml((suggestion.type || "issue").toUpperCase())}</span>
-      </div>
-      <div class="ocla-card-diff">
-        <span class="ocla-text ocla-text-error">${escapeHtml(suggestion.original || "")}</span>
-        <span class="ocla-arrow">→</span>
-        <span class="ocla-text ocla-text-success">${escapeHtml(suggestion.suggestion || "")}</span>
-      </div>
-      <div class="ocla-expl">${escapeHtml(suggestion.explanation || "")}</div>
-      <div class="ocla-card-actions">
-        <button class="ocla-action-btn ocla-accept-btn" title="Apply this suggestion">✓ Accept</button>
-        <button class="ocla-action-btn ocla-reject-btn" title="Dismiss this suggestion">✗ Reject</button>
-      </div>
-    `;
+    const top = document.createElement("div");
+    top.className = "ocla-card-top";
+    const badge = document.createElement("span");
+    badge.className = `ocla-type-badge ${typeClass}`;
+    badge.textContent = (suggestion.type || "issue").toUpperCase();
+    top.appendChild(badge);
+
+    const diff = document.createElement("div");
+    diff.className = "ocla-card-diff";
+    const orig = document.createElement("span");
+    orig.className = "ocla-text ocla-text-error";
+    orig.textContent = suggestion.original || "";
+    const arrow = document.createElement("span");
+    arrow.className = "ocla-arrow";
+    arrow.textContent = "→";
+    const sugg = document.createElement("span");
+    sugg.className = "ocla-text ocla-text-success";
+    sugg.textContent = suggestion.suggestion || "";
+    diff.append(orig, arrow, sugg);
+
+    const expl = document.createElement("div");
+    expl.className = "ocla-expl";
+    expl.textContent = suggestion.explanation || "";
+
+    const actions = document.createElement("div");
+    actions.className = "ocla-card-actions";
+    const acceptBtn = document.createElement("button");
+    acceptBtn.className = "ocla-action-btn ocla-accept-btn";
+    acceptBtn.title = "Apply this suggestion";
+    acceptBtn.textContent = "✓ Accept";
+    const rejectBtn = document.createElement("button");
+    rejectBtn.className = "ocla-action-btn ocla-reject-btn";
+    rejectBtn.title = "Dismiss this suggestion";
+    rejectBtn.textContent = "✗ Reject";
+    actions.append(acceptBtn, rejectBtn);
+
+    card.append(top, diff, expl, actions);
 
     // Clicking the card body (not the action buttons) jumps to the highlight.
     card.addEventListener("click", (e) => {
@@ -360,12 +386,12 @@
       }
     });
 
-    card.querySelector(".ocla-accept-btn").addEventListener("click", (e) => {
+    acceptBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       window.__oclaContent?.onAcceptSuggestion(index);
     });
 
-    card.querySelector(".ocla-reject-btn").addEventListener("click", (e) => {
+    rejectBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       window.__oclaContent?.onRejectSuggestion(index);
     });
