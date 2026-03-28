@@ -37,16 +37,16 @@ Firefox requires extensions to be signed by Mozilla for permanent installation, 
 
 ## Setup
 
-1. Click the **✦** toolbar icon (bottom-left of the sidebar)
-2. Select a **Provider**:
+1. Click the **✦** toolbar icon
+2. Choose a **Provider** in the popup:
    - **Anthropic** — get a key at [console.anthropic.com](https://console.anthropic.com)
      - Suggested models: `claude-haiku-4-5-20251001` (fast), `claude-sonnet-4-5`, `claude-opus-4-5`
    - **Google Gemini** — get a key at [aistudio.google.com](https://aistudio.google.com)
      - Suggested models: `gemini-2.0-flash`, `gemini-2.5-flash-preview-04-17`, `gemini-2.5-pro-preview-03-25`
    - **OpenRouter** — get a key at [openrouter.ai](https://openrouter.ai) (access to 100+ models)
      - Suggested models: `google/gemini-flash-1.5`, `meta-llama/llama-3.3-70b-instruct`, `mistralai/mistral-small-3.1-24b-instruct`, `deepseek/deepseek-chat-v3-0324`, `openai/gpt-4o-mini`
-3. Paste your API key for the selected provider
-4. Enter a model ID for the selected provider
+3. Paste your API key for that provider
+4. Enter a model ID for that provider, or leave the provider default
 5. Click **Save Settings**
 
 ---
@@ -54,7 +54,7 @@ Firefox requires extensions to be signed by Mozilla for permanent installation, 
 ## Usage
 
 1. Open any project on **overleaf.com** (URL must match `/project/*`)
-2. The AI sidebar appears on the right side of the editor
+2. The AI sidebar appears in Overleaf's left sidebar
 3. Choose a mode:
    - **Proofreading** — spell and grammar errors
    - **Style** — all of proofreading, plus clarity and flow suggestions
@@ -116,7 +116,7 @@ All provider APIs (Anthropic, Gemini, OpenRouter) block calls from content scrip
 
 | Permission | Purpose |
 |---|---|
-| `storage` | Store API key and model selection locally |
+| `storage` | Store provider settings locally |
 | `activeTab` | Interact with the active Overleaf tab |
 | `host_permissions: overleaf.com` | Inject content scripts |
 | `host_permissions: api.anthropic.com` | Anthropic API calls |

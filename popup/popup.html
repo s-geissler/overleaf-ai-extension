@@ -12,24 +12,30 @@
       <span class="logo">✦</span>
       <div class="header-text">
         <h1>AI Assistant</h1>
-        <p>for Overleaf</p>
+        <p>Configure one provider at a time.</p>
       </div>
     </header>
 
     <main>
-
-      <!-- Provider -->
       <section class="section">
-        <label class="label" for="provider-select">Provider</label>
-        <select id="provider-select" class="select">
-          <option value="anthropic">Anthropic (Claude)</option>
-          <option value="gemini">Google Gemini</option>
-          <option value="openrouter">OpenRouter</option>
-        </select>
+        <label class="label">Provider</label>
+        <div id="provider-tabs" class="provider-tabs" role="tablist" aria-label="Provider">
+          <button type="button" class="provider-tab" data-provider="anthropic">Anthropic</button>
+          <button type="button" class="provider-tab" data-provider="gemini">Gemini</button>
+          <button type="button" class="provider-tab" data-provider="openrouter">OpenRouter</button>
+        </div>
+        <p class="hint" id="provider-hint"></p>
       </section>
 
-      <!-- API Key (per provider) -->
-      <section class="section">
+      <section class="section settings-card">
+        <div class="card-header">
+          <div>
+            <h2 id="provider-title" class="card-title">Anthropic</h2>
+            <p id="provider-copy" class="card-copy"></p>
+          </div>
+          <span id="provider-badge" class="provider-badge">Active</span>
+        </div>
+
         <label class="label" for="api-key" id="api-key-label">API Key</label>
         <div class="input-group">
           <input
@@ -40,16 +46,14 @@
             autocomplete="off"
             spellcheck="false"
           >
-          <button id="toggle-visibility" class="icon-btn" title="Show/hide key">👁</button>
+          <button type="button" id="toggle-visibility" class="icon-btn" title="Show or hide key">Show</button>
         </div>
-        <p class="hint" id="api-key-hint">
-          Stored locally in your browser. Sent only to the selected provider's API.
-        </p>
-      </section>
+        <p class="hint" id="api-key-hint"></p>
 
-      <!-- Model -->
-      <section class="section">
-        <label class="label" for="model-input">Model</label>
+        <div class="field-row">
+          <label class="label" for="model-input">Model</label>
+          <button type="button" id="reset-model" class="link-btn">Use Default</button>
+        </div>
         <input
           type="text"
           id="model-input"
@@ -60,7 +64,6 @@
         <p class="hint" id="model-hint"></p>
       </section>
 
-      <!-- Accent color -->
       <section class="section">
         <label class="label">Accent Color</label>
         <div class="swatch-row" id="swatch-row"></div>
@@ -82,22 +85,14 @@
 
       <button id="save-btn" class="btn-primary">Save Settings</button>
 
-      <div class="divider"></div>
-
       <section class="info-section">
-        <h2>How to use</h2>
-        <ol>
-          <li>Open a project on <strong>overleaf.com</strong></li>
-          <li>The AI sidebar appears on the right side of the editor</li>
-          <li>Choose <em>Proofreading</em> or <em>Style</em> mode</li>
-          <li>Click <strong>Check Document</strong> or select text and click <strong>Check Selection</strong></li>
-          <li>Suggestions appear in the sidebar and as inline highlights</li>
-        </ol>
+        <h2>Usage</h2>
+        <p>Open an Overleaf project, choose a mode in the AI sidebar, then run <strong>Check Document</strong> or <strong>Check Selection</strong>.</p>
       </section>
     </main>
 
     <footer class="footer">
-      v1.1.0 &nbsp;·&nbsp; Multi-provider AI
+      Stored locally in Firefox
     </footer>
   </div>
 

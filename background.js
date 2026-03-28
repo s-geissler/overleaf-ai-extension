@@ -3,6 +3,13 @@
  * Handles API calls to multiple providers (Anthropic, Google Gemini, OpenRouter).
  */
 
+const JSON_RESPONSE_RULES = `JSON OUTPUT RULES:
+- Output valid JSON only. No markdown, no code fences, no prose before or after the JSON.
+- Use standard JSON with double-quoted keys and strings.
+- Do not include comments, trailing commas, ellipses, placeholders, or extra keys.
+- Escape embedded quotes and newlines correctly so the JSON parses with JSON.parse().
+- If there is nothing to report, return the exact empty value required by the schema.`;
+
 const SYSTEM_PROMPTS = {
   proofreading: `You are an expert academic proofreader specializing in LaTeX documents.
 Your task is to identify typos, spelling errors, and grammar mistakes in the provided text.
@@ -10,52 +17,62 @@ Your task is to identify typos, spelling errors, and grammar mistakes in the pro
 IMPORTANT:
 - Focus only on clear errors: typos, misspellings, grammatical mistakes, wrong word usage.
 - Do NOT suggest stylistic changes or rewrites in this mode.
-- Ignore LaTeX commands and markup (\\begin, \\end, \\textbf, etc.) — only check the natural language text.
-- Return ONLY a valid JSON array. No markdown, no explanation outside the JSON.
+- Ignore LaTeX commands and markup (\\begin, \\end, \\textbf, etc.) and only check the natural language text.
+- Each suggestion must quote the original text exactly as it appears in the input.
+- Keep explanations brief and factual.
 
-Return format (JSON array):
+${JSON_RESPONSE_RULES}
+
+Required schema:
 [
   {
     "original": "exact text with error as it appears",
     "suggestion": "corrected text",
     "explanation": "brief reason for correction",
-    "type": "typo|grammar"
+    "type": "typo"
   }
 ]
 
-If there are no errors, return an empty array: []`,
+Valid "type" values for this mode: "typo", "grammar"
+If there are no errors, return exactly []`,
 
   style: `You are an expert academic writing coach specializing in LaTeX documents.
-Your task is to identify both errors AND stylistic improvements in the provided text.
+Your task is to identify both errors and stylistic improvements in the provided text.
 
 IMPORTANT:
-- Check for typos, spelling errors, grammar mistakes.
-- Also suggest improvements to clarity, flow, conciseness, and academic writing style.
-- Ignore LaTeX commands and markup — only work with natural language text.
-- Return ONLY a valid JSON array. No markdown, no explanation outside the JSON.
+- Check for typos, spelling errors, grammar mistakes, and improvements to clarity, flow, conciseness, and academic writing style.
+- Ignore LaTeX commands and markup and only work with natural language text.
+- Each suggestion must quote the original text exactly as it appears in the input.
+- Keep explanations brief and specific.
 
-Return format (JSON array):
+${JSON_RESPONSE_RULES}
+
+Required schema:
 [
   {
     "original": "exact text as it appears",
     "suggestion": "improved text",
     "explanation": "brief reason for the suggestion",
-    "type": "typo|grammar|style"
+    "type": "style"
   }
 ]
 
-If there are no suggestions, return an empty array: []`,
+Valid "type" values for this mode: "typo", "grammar", "style"
+If there are no suggestions, return exactly []`,
 
   factchecking: `You are an expert fact-checker for academic LaTeX documents.
 Your task is to identify factual inaccuracies, incorrect attributions, wrong dates, or demonstrably false statements.
 
 IMPORTANT:
-- Focus only on clear factual errors: wrong names, incorrect dates, false claims, misattributed quotes.
+- Focus only on clear factual errors: wrong names, incorrect dates, false claims, or misattributed quotes.
 - Do NOT flag matters of opinion, unverifiable claims, or stylistic issues.
-- Ignore LaTeX commands and markup — only assess the natural language content.
-- Return ONLY a valid JSON array. No markdown, no explanation outside the JSON.
+- Ignore LaTeX commands and markup and only assess the natural language content.
+- Each suggestion must quote the original text exactly as it appears in the input.
+- Keep explanations brief and factual.
 
-Return format (JSON array):
+${JSON_RESPONSE_RULES}
+
+Required schema:
 [
   {
     "original": "exact text as it appears",
@@ -65,22 +82,63 @@ Return format (JSON array):
   }
 ]
 
-If there are no factual issues, return an empty array: []`,
+Valid "type" values for this mode: "factual"
+If there are no factual issues, return exactly []`,
 
   compacting: `You are an expert academic editor specializing in LaTeX documents.
 Your task is to shorten the provided text while preserving its full meaning, all arguments, and the author's writing style.
 
 IMPORTANT:
-- You MAY restructure sentences and paragraphs to improve conciseness.
-- You MUST NOT remove any content, facts, or arguments — only condense the expression.
-- You MUST keep all LaTeX commands (\\begin, \\end, \\textbf, \\cite, \\ref, \\label, etc.) completely unchanged and in their correct positions relative to the surrounding text.
-- Prioritise readability over maximum shortness.
+- You may restructure sentences and paragraphs to improve conciseness.
+- You must not remove any content, facts, or arguments and may only condense the expression.
+- You must keep all LaTeX commands (\\begin, \\end, \\textbf, \\cite, \\ref, \\label, etc.) completely unchanged and in their correct positions relative to the surrounding text.
+- Prioritize readability over maximum shortness.
 - Match the author's existing register, tone, and writing style.
-- Return ONLY a JSON object with two keys. No markdown, no explanation outside the JSON.
 
-Return format:
-{"compacted": "the full compacted text, ready to paste", "explanation": "brief summary of what was changed or restructured"}`
+${JSON_RESPONSE_RULES}
+
+Required schema:
+{
+  "compacted": "the full compacted text, ready to paste",
+  "explanation": "brief summary of what was changed or restructured"
+}
+
+The response must be a single JSON object with exactly those two keys.
+The "compacted" value must always be a non-empty string.`
 };
+
+/**
+ * Build the user-facing prompt for the selected analysis mode.
+ * Inputs: `text` as the LaTeX source to analyze, `mode` as the active feature mode.
+ * Returns: A provider-agnostic prompt string that restates the expected JSON shape.
+ */
+function buildUserPrompt(text, mode) {
+  if (mode === "compacting") {
+    return `Compact the following LaTeX text.
+
+Return exactly one JSON object with this shape and no extra keys:
+{"compacted":"...","explanation":"..."}
+
+Do not wrap the JSON in markdown fences.
+Do not add any commentary outside the JSON.
+
+LaTeX text:
+${text}`;
+  }
+
+  return `Analyze the following LaTeX text.
+
+Return exactly one JSON array of suggestion objects and nothing else.
+Each object must contain exactly these keys in this order:
+"original", "suggestion", "explanation", "type"
+
+If there are no issues to report, return exactly [].
+Do not wrap the JSON in markdown fences.
+Do not add any commentary outside the JSON.
+
+LaTeX text:
+${text}`;
+}
 
 // ─── Provider Definitions ──────────────────────────────────────────────────
 
@@ -136,6 +194,11 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // ─── Router ────────────────────────────────────────────────────────────────
 
+/**
+ * Route an analysis request to the configured provider implementation.
+ * Inputs: Request payload with text, mode, provider id, API key, and model id.
+ * Returns: A normalized result object containing suggestions or compacted text plus usage.
+ */
 async function handleAPICall({ text, mode, provider, apiKey, model }) {
   if (!apiKey) throw new Error("No API key configured. Open extension settings.");
   if (!text || !text.trim()) throw new Error("No text provided.");
@@ -152,7 +215,13 @@ async function handleAPICall({ text, mode, provider, apiKey, model }) {
 
 // ─── Anthropic ─────────────────────────────────────────────────────────────
 
+/**
+ * Send an analysis request to Anthropic's Messages API.
+ * Inputs: Provider credentials, selected model, prepared system prompt, source text, and mode.
+ * Returns: Parsed suggestions or compacted text with token usage normalized to the extension format.
+ */
 async function callAnthropic(apiKey, model, systemPrompt, text, mode) {
+  const userPrompt = buildUserPrompt(text, mode);
   const response = await fetchJSON("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -164,7 +233,7 @@ async function callAnthropic(apiKey, model, systemPrompt, text, mode) {
       model: model || "claude-haiku-4-5-20251001",
       max_tokens: 4096,
       system: systemPrompt,
-      messages: [{ role: "user", content: `Analyze this LaTeX text:\n\n${text}` }]
+      messages: [{ role: "user", content: userPrompt }]
     })
   });
 
@@ -180,15 +249,21 @@ async function callAnthropic(apiKey, model, systemPrompt, text, mode) {
 
 // ─── Google Gemini ─────────────────────────────────────────────────────────
 
+/**
+ * Send an analysis request to the Google Gemini API.
+ * Inputs: Provider credentials, selected model, prepared system prompt, source text, and mode.
+ * Returns: Parsed suggestions or compacted text with token usage normalized to the extension format.
+ */
 async function callGemini(apiKey, model, systemPrompt, text, mode) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const userPrompt = buildUserPrompt(text, mode);
 
   const response = await fetchJSON(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       system_instruction: { parts: [{ text: systemPrompt }] },
-      contents: [{ role: "user", parts: [{ text: `Analyze this LaTeX text:\n\n${text}` }] }],
+      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
       generationConfig: { maxOutputTokens: 4096 }
     })
   });
@@ -206,7 +281,13 @@ async function callGemini(apiKey, model, systemPrompt, text, mode) {
 
 // ─── OpenRouter ────────────────────────────────────────────────────────────
 
+/**
+ * Send an analysis request to OpenRouter's chat completions API.
+ * Inputs: Provider credentials, selected model, prepared system prompt, source text, and mode.
+ * Returns: Parsed suggestions or compacted text with token usage normalized to the extension format.
+ */
 async function callOpenRouter(apiKey, model, systemPrompt, text, mode) {
+  const userPrompt = buildUserPrompt(text, mode);
   const response = await fetchJSON("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -220,7 +301,7 @@ async function callOpenRouter(apiKey, model, systemPrompt, text, mode) {
       max_tokens: 4096,
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user",   content: `Analyze this LaTeX text:\n\n${text}` }
+        { role: "user",   content: userPrompt }
       ]
     })
   });
@@ -238,6 +319,11 @@ async function callOpenRouter(apiKey, model, systemPrompt, text, mode) {
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
+/**
+ * Fetch JSON from a provider endpoint and normalize common transport and API errors.
+ * Inputs: `url` string and `options` object passed through to `fetch`.
+ * Returns: The parsed JSON response body, or throws a user-facing error.
+ */
 async function fetchJSON(url, options) {
   let response;
   try {
@@ -261,20 +347,130 @@ async function fetchJSON(url, options) {
   return response.json();
 }
 
+/**
+ * Parse and validate the model response for the active mode.
+ * Inputs: Raw model text and the requested mode.
+ * Returns: `{ suggestions }` for analysis modes or `{ compacted, explanation }` for compacting.
+ */
 function parseResult(raw, mode) {
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
+  const cleaned = normalizeModelOutput(raw);
+  if (!cleaned) {
+    throw new Error("The model returned an empty response.");
+  }
+
   if (mode === "compacting") {
     try {
-      const obj = JSON.parse(cleaned);
-      return { compacted: obj.compacted || cleaned, explanation: obj.explanation || "" };
+      const obj = JSON.parse(extractJSONPayload(cleaned, "object"));
+      if (!obj || typeof obj !== "object") {
+        throw new Error("invalid compacting payload");
+      }
+      if (typeof obj.compacted !== "string" || !obj.compacted.trim()) {
+        throw new Error("missing compacted text");
+      }
+      return { compacted: obj.compacted, explanation: typeof obj.explanation === "string" ? obj.explanation : "" };
     } catch (_) {
-      return { compacted: cleaned, explanation: "" };
+      throw new Error("The model returned invalid JSON for compacting mode.");
     }
   }
+
   try {
-    const parsed = JSON.parse(cleaned);
-    return { suggestions: Array.isArray(parsed) ? parsed : [] };
+    const parsed = JSON.parse(extractJSONPayload(cleaned, "array"));
+    if (!Array.isArray(parsed)) {
+      throw new Error("invalid suggestion payload");
+    }
+    return { suggestions: parsed };
   } catch (_) {
-    return { suggestions: [] };
+    throw new Error("The model returned invalid JSON suggestions.");
   }
+}
+
+/**
+ * Strip common wrapper noise before JSON recovery.
+ * Inputs: Raw model response text.
+ * Returns: Trimmed text with leading and trailing Markdown fences removed.
+ */
+function normalizeModelOutput(raw) {
+  return raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
+}
+
+/**
+ * Recover the first parseable JSON payload from noisy model output.
+ * Inputs: Cleaned response text and the expected top-level type (`array` or `object`).
+ * Returns: A JSON substring that can be safely passed to `JSON.parse()`.
+ */
+function extractJSONPayload(raw, expectedType) {
+  try {
+    JSON.parse(raw);
+    return raw;
+  } catch (_) {}
+
+  const ranges = expectedType === "object"
+    ? findBalancedJSONRanges(raw, "{", "}")
+    : findBalancedJSONRanges(raw, "[", "]");
+
+  for (const [start, end] of ranges) {
+    const candidate = raw.slice(start, end + 1).trim();
+    try {
+      const parsed = JSON.parse(candidate);
+      if (expectedType === "object" && parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return candidate;
+      }
+      if (expectedType === "array" && Array.isArray(parsed)) {
+        return candidate;
+      }
+    } catch (_) {}
+  }
+
+  throw new Error("No recoverable JSON payload found.");
+}
+
+/**
+ * Scan text for balanced top-level JSON-like spans while respecting quoted strings.
+ * Inputs: Source text plus the opening and closing delimiter characters to match.
+ * Returns: An array of `[start, end]` index pairs for candidate JSON substrings.
+ */
+function findBalancedJSONRanges(text, openChar, closeChar) {
+  const ranges = [];
+  let start = -1;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === "\"") {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === "\"") {
+      inString = true;
+      continue;
+    }
+
+    if (char === openChar) {
+      if (depth === 0) {
+        start = i;
+      }
+      depth += 1;
+      continue;
+    }
+
+    if (char === closeChar && depth > 0) {
+      depth -= 1;
+      if (depth === 0 && start !== -1) {
+        ranges.push([start, i]);
+        start = -1;
+      }
+    }
+  }
+
+  return ranges;
 }
