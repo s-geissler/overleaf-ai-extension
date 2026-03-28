@@ -233,7 +233,7 @@
     },
 
     /**
-     * Replace the saved compacting selection with the model's compacted text.
+     * Replace the saved compacting selection with a commented original block plus the compacted text.
      * Inputs: The compacted replacement text.
      * Returns: A promise that resolves after the editor edit and UI cleanup complete.
      */
@@ -241,12 +241,14 @@
       if (!state.compactRange) return;
       const cmContent = document.querySelector(".cm-content");
       if (cmContent) {
+        const originalText = state.analysisContext?.text || state.compactRange.toString() || "";
+        const replacementText = buildCompactingWriteback(originalText, compactedText);
         await performTrackedEditorEdit(() => {
           const sel = window.getSelection();
           sel.removeAllRanges();
           sel.addRange(state.compactRange);
           cmContent.focus();
-          return document.execCommand("insertText", false, compactedText);
+          return document.execCommand("insertText", false, replacementText);
         });
       }
       state.compactRange = null;
@@ -265,9 +267,14 @@
         window.__oclaSidebar.showError("The document changed after analysis. Run the check again before applying suggestions.");
         return;
       }
+      let applied = null;
       state.isApplyingEdit = true;
-      const applied = await window.__oclaHighlights.acceptHighlight(id);
-      state.isApplyingEdit = false;
+      try {
+        applied = await window.__oclaHighlights.acceptHighlight(id);
+      } finally {
+        await waitForPaint();
+        state.isApplyingEdit = false;
+      }
       if (!applied) {
         window.__oclaSidebar.showError("Could not apply that suggestion to the current editor selection.");
         return;
@@ -408,6 +415,21 @@
         }
       };
     });
+  }
+
+  /**
+   * Format compacting output so the original selection remains as LaTeX comments above the new text.
+   * Inputs: Original selected text and the compacted replacement text.
+   * Returns: A single string ready to insert back into the editor.
+   */
+  function buildCompactingWriteback(originalText, compactedText) {
+    const commentPrefix = "% ";
+    const commentedOriginal = originalText
+      .split("\n")
+      .map((line) => `${commentPrefix}${line}`)
+      .join("\n");
+
+    return `${commentedOriginal}\n${compactedText}`;
   }
 
   // ─── Accent color theming ─────────────────────────────────────────────────
